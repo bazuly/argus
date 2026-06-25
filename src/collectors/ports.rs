@@ -24,7 +24,6 @@ pub fn collect(port_filter: Option<u16>) -> Result<Vec<PortBinding>> {
                 if tcp_info.state != TcpState::Listen {
                     continue;
                 }
-                // Фильтр из CLI: если --port задан и не совпадает — пропускаем
                 if let Some(wanted_port) = port_filter {
                     if tcp_info.local_port != wanted_port {
                         continue;

@@ -25,12 +25,27 @@ fn main() -> Result<()> {
             }
         }
 
-        Command::Ps(_) => {
-            println!("In progress");
+        Command::Ps(args) => {
+            let processes = collectors::processes::collect(args.dev_only)?;
+            for process in processes {
+                println!(
+                    "pid={} dev={} cpu={:.1}% mem={} name={:?} cmd={:?}",
+                    process.pid,
+                    process.is_dev,
+                    process.cpu_usage,
+                    process.memory_bytes,
+                    process.name,
+                    process.cmdline,
+                );
+            }
         }
 
-        Command::Stats(_) => {
-            println!("In progress")
+        Command::Stats(_args) => {
+            let stats = collectors::system::collect()?;
+            println!(
+                "ram_used_bytes={} ram_total_bytes={} cpu_global={:.1}%",
+                stats.used_memory, stats.total_memory, stats.global_cpu_usage,
+            );
         }
     }
 
