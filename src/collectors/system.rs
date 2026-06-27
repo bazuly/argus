@@ -1,4 +1,4 @@
-use crate::model::SystemStats;
+use crate::models::SystemStats;
 use anyhow::Result;
 use std::thread;
 use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, System};

@@ -1,6 +1,6 @@
 mod cli;
 mod collectors;
-mod model;
+mod models;
 mod output;
 use anyhow::{Ok, Result};
 use clap::Parser;
@@ -15,9 +15,7 @@ fn main() -> Result<()> {
 
             match args.format {
                 OutputFormat::Table => output::table::print_ports(&bindings),
-                OutputFormat::Json => {
-                    println!("JSON output is not implemented yet. Use --format table.");
-                }
+                OutputFormat::Json => output::json::print_ports(&bindings)?,
             }
         }
 
@@ -26,18 +24,14 @@ fn main() -> Result<()> {
 
             match args.format {
                 OutputFormat::Table => output::table::print_processes(&processes),
-                OutputFormat::Json => {
-                    println!("JSON output is not implemented yet. Use --format table.");
-                }
+                OutputFormat::Json => output::json::print_processes(&processes)?,
             }
         }
         Command::Stats(args) => {
             let stats = collectors::system::collect()?;
             match args.format {
                 OutputFormat::Table => output::table::print_stats(&stats),
-                OutputFormat::Json => {
-                    println!("JSON output is not implemented yet. Use --format table.");
-                }
+                OutputFormat::Json => output::json::print_stats(&stats)?,
             }
         }
     }

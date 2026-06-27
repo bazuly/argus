@@ -1,5 +1,4 @@
-use crate::collectors::models::Protocol;
-use crate::model::PortBinding;
+use crate::models::{PortBinding, Protocol};
 use anyhow::Result;
 use netstat2::{AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo, TcpState, get_sockets_info};
 use sysinfo::{Pid, ProcessesToUpdate, System};

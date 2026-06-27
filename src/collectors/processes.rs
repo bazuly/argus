@@ -1,4 +1,4 @@
-use crate::model::DevProcess;
+use crate::models::DevProcess;
 use anyhow::Result;
 use std::ffi::OsString;
 use std::thread;

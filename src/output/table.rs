@@ -1,5 +1,4 @@
-use crate::collectors::models::Protocol;
-use crate::model::{DevProcess, PortBinding, SystemStats};
+use crate::models::{DevProcess, PortBinding, Protocol, SystemStats};
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{ContentArrangement, Table};
 
