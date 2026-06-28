@@ -11,12 +11,18 @@ pub struct Cli {
 // example: cargo run ports/stats/ps
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Interactive dashboard (TUI)
+    #[command(alias = "ui")]
+    Tui,
+
     /// Listening ports
     #[command(alias = "p", visible_alias = "port")]
     Ports(PortsArgs),
+
     /// Running processes
     #[command(alias = "proc")]
     Ps(PsArgs),
+
     /// System stats
     #[command(aliases = ["st", "sys"])]
     Stats(StatsArgs),

@@ -2,6 +2,8 @@ mod cli;
 mod collectors;
 mod models;
 mod output;
+mod tui;
+
 use anyhow::{Ok, Result};
 use clap::Parser;
 use cli::{Cli, Command, OutputFormat};
@@ -10,6 +12,10 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Command::Tui => {
+            tui::run()?;
+        }
+
         Command::Ports(args) => {
             let bindings = collectors::ports::collect(args.port)?;
 
