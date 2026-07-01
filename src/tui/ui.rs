@@ -1,12 +1,16 @@
 use crate::models::Protocol;
 use crate::tui::app::{App, Tab};
 
+use crate::output::table::truncate_text;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::style::{Modifier, Style};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph, Row, Table};
 
 const BYTES_IN_GB: f64 = 1024.0 * 1024.0 * 1024.0;
+const BYTES_IN_MB: f64 = 1024.0 * 1024.0;
+const MAX_CMDLINE_LEN: usize = 60;
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
@@ -40,16 +44,43 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
-    let label = match app.tab {
-        Tab::Ports => "[Ports]",
+    let ports_label = if app.tab == Tab::Ports {
+        "▶ 1:Ports"
+    } else {
+        "  1:Ports"
     };
-    let widget = Paragraph::new(label);
+    let processes_label = if app.tab == Tab::Processes {
+        "▶ 2:Processes"
+    } else {
+        "  2:Processes"
+    };
+
+    let ports_style = if app.tab == Tab::Ports {
+        Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+    } else {
+        Style::new().fg(Color::DarkGray)
+    };
+
+    let processes_style = if app.tab == Tab::Processes {
+        Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+    } else {
+        Style::new().fg(Color::DarkGray)
+    };
+
+    let line = Line::from(vec![
+        Span::styled(ports_label, ports_style),
+        Span::raw("   "),
+        Span::styled(processes_label, processes_style),
+    ]);
+
+    let widget = Paragraph::new(line);
     frame.render_widget(widget, area);
 }
 
 fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
     match app.tab {
         Tab::Ports => draw_ports_table(frame, area, app),
+        Tab::Processes => draw_processes_table(frame, area, app),
     }
 }
 
@@ -81,7 +112,7 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
             ])
         })
         .collect();
-    let table = Table::new(
+    let widget = Table::new(
         rows,
         [
             Constraint::Length(6),
@@ -93,7 +124,55 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
     )
     .header(header)
     .block(Block::bordered().title("Ports"));
-    frame.render_widget(table, area);
+    frame.render_widget(widget, area);
+}
+
+fn draw_processes_table(frame: &mut Frame, area: Rect, app: &App) {
+    let Some(snapshot) = &app.snapshot else {
+        let widget =
+            Paragraph::new("Loading processes...").block(Block::bordered().title("Processes"));
+        frame.render_widget(widget, area);
+        return;
+    };
+
+    if snapshot.processes.is_empty() {
+        let widget =
+            Paragraph::new("No dev processes found.").block(Block::bordered().title("Processes"));
+        frame.render_widget(widget, area);
+        return;
+    }
+
+    let header = Row::new(vec!["PID", "CPU", "MEM", "NAME", "CMD"])
+        .style(Style::new().add_modifier(Modifier::BOLD))
+        .bottom_margin(1);
+
+    let rows: Vec<Row> = snapshot
+        .processes
+        .iter()
+        .map(|process| {
+            Row::new(vec![
+                process.pid.to_string(),
+                format_cpu(process.cpu_usage),
+                format_memory_mb(process.memory_bytes),
+                process.name.clone(),
+                truncate_text(&process.cmdline, MAX_CMDLINE_LEN),
+            ])
+        })
+        .collect();
+
+    let widget = Table::new(
+        rows,
+        [
+            Constraint::Length(8),
+            Constraint::Length(8),
+            Constraint::Length(12),
+            Constraint::Length(14),
+            Constraint::Min(20),
+        ],
+    )
+    .header(header)
+    .block(Block::bordered().title("Processes (dev only)"));
+    frame.render_widget(widget, area);
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect) {
@@ -112,6 +191,15 @@ fn format_protocol(protocol: Protocol) -> String {
         Protocol::Tcp => "tcp".to_string(),
         Protocol::Udp => "udp".to_string(),
     }
+}
+
+fn format_memory_mb(bytes: u64) -> String {
+    let megabytes = bytes as f64 / BYTES_IN_MB;
+    format!("{megabytes:.1} MB")
+}
+
+fn format_cpu(cpu_usage: f32) -> String {
+    format!("{cpu_usage:.1} %")
 }
 
 fn format_pid(pid: Option<u32>) -> String {

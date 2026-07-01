@@ -112,7 +112,7 @@ fn format_is_dev(is_dev: bool) -> String {
     }
 }
 
-fn truncate_text(text: &str, max_len: usize) -> String {
+pub fn truncate_text(text: &str, max_len: usize) -> String {
     if text.chars().count() <= max_len {
         return text.to_string();
     } else {

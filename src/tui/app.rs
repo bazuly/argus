@@ -20,8 +20,7 @@ pub struct App {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tab {
     Ports,
-    // Processes,
-    // Stats,
+    Processes,
 }
 
 impl App {
@@ -34,6 +33,11 @@ impl App {
             needs_refresh: true,
             last_error: None,
         }
+    }
+
+    pub fn set_tab(&mut self, tab: Tab) {
+        self.tab = tab;
+        self.selected_row = 0;
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
