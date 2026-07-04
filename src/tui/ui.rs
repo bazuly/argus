@@ -13,7 +13,7 @@ const BYTES_IN_GB: f64 = 1024.0 * 1024.0 * 1024.0;
 const BYTES_IN_MB: f64 = 1024.0 * 1024.0;
 const MAX_CMDLINE_LEN: usize = 60;
 
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -29,7 +29,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
     draw_footer(frame, chunks[3]);
 }
 
-fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
+fn viewport_rows(area: Rect) -> usize {
+    // 2 = рамка Block, 1 = header, 1 = bottom_margin у header
+    area.height.saturating_sub(4) as usize
+}
+
+fn draw_header(frame: &mut Frame, area: Rect, app: &mut App) {
     let text = if let Some(error) = &app.last_error {
         format!("argus | ERROR: {error}")
     } else if let Some(snapshot) = &app.snapshot {
@@ -44,16 +49,16 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(widget, area);
 }
 
-fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_tabs(frame: &mut Frame, area: Rect, app: &mut App) {
     let ports_label = if app.tab == Tab::Ports {
         "▶ 1:Ports"
     } else {
         "  1:Ports"
     };
     let processes_label = if app.tab == Tab::Processes {
-        "▶ 2:Processes"
+        "▶ 2:DEV Processes"
     } else {
-        "  2:Processes"
+        "  2:DEV Processes"
     };
 
     let ports_style = if app.tab == Tab::Ports {
@@ -78,14 +83,17 @@ fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(widget, area);
 }
 
-fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_main(frame: &mut Frame, area: Rect, app: &mut App) {
     match app.tab {
         Tab::Ports => draw_ports_table(frame, area, app),
         Tab::Processes => draw_processes_table(frame, area, app),
     }
 }
 
-fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_ports_table(frame: &mut Frame, area: Rect, app: &mut App) {
+    let visible = viewport_rows(area);
+    app.ensure_visible(visible);
+
     let Some(snapshot) = &app.snapshot else {
         let widget = Paragraph::new("Loading ports...").block(Block::bordered().title("Ports"));
         frame.render_widget(widget, area);
@@ -97,6 +105,7 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
         frame.render_widget(widget, area);
         return;
     }
+
     let header = Row::new(vec!["PORT", "PROTO", "ADDRESS", "PID", "OWNER"])
         .style(Style::new().add_modifier(Modifier::BOLD))
         .bottom_margin(1);
@@ -113,6 +122,10 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
             ])
         })
         .collect();
+
+    let selected_row = app.selected_row;
+    let total = snapshot.ports.len();
+
     let widget = Table::new(
         rows,
         [
@@ -124,21 +137,27 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
         ],
     )
     .header(header)
-    .block(Block::bordered().title("Ports"));
-    frame.render_widget(widget, area);
+    .block(Block::bordered().title(format!("Ports [{}/{}]", selected_row + 1, total)))
+    .row_highlight_style(
+        Style::new()
+            .bg(Color::DarkGray)
+            .add_modifier(Modifier::BOLD),
+    )
+    .highlight_symbol("▶ ");
+    frame.render_stateful_widget(widget, area, &mut app.table_state);
 }
 
-fn draw_processes_table(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_processes_table(frame: &mut Frame, area: Rect, app: &mut App) {
     let Some(snapshot) = &app.snapshot else {
         let widget =
-            Paragraph::new("Loading processes...").block(Block::bordered().title("Processes"));
+            Paragraph::new("Loading processes...").block(Block::bordered().title("DEV Processes"));
         frame.render_widget(widget, area);
         return;
     };
 
     if snapshot.processes.is_empty() {
-        let widget =
-            Paragraph::new("No dev processes found.").block(Block::bordered().title("Processes"));
+        let widget = Paragraph::new("No dev processes found.")
+            .block(Block::bordered().title("DEV Processes"));
         frame.render_widget(widget, area);
         return;
     }
@@ -161,6 +180,9 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &App) {
         })
         .collect();
 
+    let selected_row = app.selected_row;
+    let total = snapshot.processes.len();
+
     let widget = Table::new(
         rows,
         [
@@ -172,8 +194,14 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &App) {
         ],
     )
     .header(header)
-    .block(Block::bordered().title("Processes (dev only)"));
-    frame.render_widget(widget, area);
+    .block(Block::bordered().title(format!("DEV Processes [{}/{}]", selected_row + 1, total)))
+    .row_highlight_style(
+        Style::new()
+            .bg(Color::LightBlue)
+            .add_modifier(Modifier::BOLD),
+    )
+    .highlight_symbol("▶ ");
+    frame.render_stateful_widget(widget, area, &mut app.table_state);
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect) {

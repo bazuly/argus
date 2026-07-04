@@ -28,7 +28,7 @@ pub fn run() -> Result<()> {
                 last_refresh = Instant::now();
             }
 
-            terminal.draw(|frame| ui::draw(frame, &app))?;
+            terminal.draw(|frame| ui::draw(frame, &mut app))?;
 
             // wait key for block
             if event::poll(Duration::from_millis(100))? {

@@ -33,6 +33,33 @@ pub fn handle_key(app: &mut App, key: KeyEvent) {
             app.set_tab(next_tab);
         }
 
+        KeyCode::Up | KeyCode::Char('k') => {
+            app.move_selection(-1);
+        }
+
+        KeyCode::Down | KeyCode::Char('j') => {
+            app.move_selection(1);
+        }
+
+        KeyCode::PageUp => {
+            app.move_selection(-20);
+        }
+
+        KeyCode::PageDown => {
+            app.move_selection(20);
+        }
+
+        KeyCode::Home => {
+            app.selected_row = 0;
+            app.table_state.select(Some(0));
+        }
+
+        KeyCode::End => {
+            let last = app.active_list_len().saturating_sub(1);
+            app.selected_row = last;
+            app.table_state.select(Some(last));
+        }
+
         _ => {}
     }
 }
