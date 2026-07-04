@@ -2,6 +2,8 @@ use crate::collectors::{ports, processes, system};
 use crate::models::{DevProcess, PortBinding, SystemStats};
 use anyhow::Result;
 
+const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
+
 pub struct Snapshot {
     pub ports: Vec<PortBinding>,
     pub processes: Vec<DevProcess>,
@@ -41,9 +43,15 @@ impl App {
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
-        let ports = ports::collect(None)?;
+        let mut ports = ports::collect(None)?;
+        // ignore default ports in tui
+        ports.retain(|binding| !TUI_IGNORED_PORTS.contains(&binding.port));
         let processes = processes::collect(true)?;
         let stats = system::collect()?;
+
+        if let Ok(containers) = crate::collectors::docker::collect() {
+            crate::collectors::enrich::attach_docker(&mut ports, &containers);
+        }
 
         self.snapshot = Some(Snapshot {
             ports,

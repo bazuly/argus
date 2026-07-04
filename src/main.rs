@@ -4,7 +4,7 @@ mod models;
 mod output;
 mod tui;
 
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Command, OutputFormat};
 
@@ -17,7 +17,11 @@ fn main() -> Result<()> {
         }
 
         Command::Ports(args) => {
-            let bindings = collectors::ports::collect(args.port)?;
+            let mut bindings = collectors::ports::collect(args.port)?;
+
+            if let Ok(containers) = collectors::docker::collect() {
+                collectors::enrich::attach_docker(&mut bindings, &containers);
+            }
 
             match args.format {
                 OutputFormat::Table => output::table::print_ports(&bindings),

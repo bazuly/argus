@@ -16,7 +16,7 @@ pub fn print_ports(bindings: &[PortBinding]) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(["PORT", "PROTO", "ADDRESS", "PID", "PROCESS"]);
+        .set_header(["PORT", "PROTO", "ADDRESS", "PID", "OWNER"]);
 
     for binding in bindings {
         table.add_row([
@@ -24,7 +24,7 @@ pub fn print_ports(bindings: &[PortBinding]) {
             format_protocol(binding.protocol),
             binding.address.clone(),
             format_pid(binding.pid),
-            format_optional_text(&binding.process_name),
+            format_port_owner(binding),
         ]);
     }
     println!("{table}");
@@ -97,13 +97,6 @@ fn format_cpu(usage: f32) -> String {
     format!("{usage:.1}%")
 }
 
-fn format_optional_text(value: &Option<String>) -> String {
-    match value {
-        Some(text) => text.clone(),
-        None => "-".to_string(),
-    }
-}
-
 fn format_is_dev(is_dev: bool) -> String {
     if is_dev {
         "yes".to_string()
@@ -119,4 +112,16 @@ pub fn truncate_text(text: &str, max_len: usize) -> String {
         let shortened: String = text.chars().take(max_len).collect();
         format!("{shortened}...")
     }
+}
+
+pub fn format_port_owner(binding: &PortBinding) -> String {
+    if let Some(name) = &binding.container_name {
+        return format!("{name} (docker)");
+    }
+
+    if let Some(process) = &binding.process_name {
+        return process.clone();
+    }
+
+    "-".to_string()
 }

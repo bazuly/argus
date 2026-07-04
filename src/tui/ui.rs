@@ -1,6 +1,7 @@
 use crate::models::Protocol;
 use crate::tui::app::{App, Tab};
 
+use crate::output::table::format_port_owner;
 use crate::output::table::truncate_text;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -96,7 +97,7 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
         frame.render_widget(widget, area);
         return;
     }
-    let header = Row::new(vec!["PORT", "PROTO", "ADDRESS", "PID", "PROCESS"])
+    let header = Row::new(vec!["PORT", "PROTO", "ADDRESS", "PID", "OWNER"])
         .style(Style::new().add_modifier(Modifier::BOLD))
         .bottom_margin(1);
     let rows: Vec<Row> = snapshot
@@ -108,7 +109,7 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &App) {
                 format_protocol(binding.protocol),
                 binding.address.clone(),
                 format_pid(binding.pid),
-                format_optional_text(&binding.process_name),
+                format_port_owner(binding),
             ])
         })
         .collect();
@@ -205,13 +206,6 @@ fn format_cpu(cpu_usage: f32) -> String {
 fn format_pid(pid: Option<u32>) -> String {
     match pid {
         Some(value) => value.to_string(),
-        None => "-".to_string(),
-    }
-}
-
-fn format_optional_text(value: &Option<String>) -> String {
-    match value {
-        Some(text) => text.clone(),
         None => "-".to_string(),
     }
 }

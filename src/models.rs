@@ -13,6 +13,8 @@ pub struct PortBinding {
     pub address: String,
     pub pid: Option<u32>,
     pub process_name: Option<String>,
+    pub container_name: Option<String>,
+    pub container_image: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -30,4 +32,11 @@ pub struct SystemStats {
     pub total_memory: u64,
     pub used_memory: u64,
     pub global_cpu_usage: f32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DockerContainer {
+    pub name: String,
+    pub image: String,
+    pub host_ports: Vec<u16>,
 }

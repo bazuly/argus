@@ -34,6 +34,8 @@ pub fn collect(port_filter: Option<u16>) -> Result<Vec<PortBinding>> {
                     address: tcp_info.local_addr.to_string(),
                     pid,
                     process_name: None,
+                    container_name: None,
+                    container_image: None,
                 });
             }
 
@@ -50,6 +52,8 @@ pub fn collect(port_filter: Option<u16>) -> Result<Vec<PortBinding>> {
                     address: udp_info.local_addr.to_string(),
                     pid,
                     process_name: None,
+                    container_name: None,
+                    container_image: None,
                 });
             }
         }
