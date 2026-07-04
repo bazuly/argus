@@ -25,10 +25,15 @@ pub fn handle_key(app: &mut App, key: KeyEvent) {
             app.set_tab(Tab::Processes);
         }
 
+        KeyCode::Char('3') => {
+            app.set_tab(Tab::Docker);
+        }
+
         KeyCode::Tab => {
             let next_tab = match app.tab {
                 Tab::Ports => Tab::Processes,
-                Tab::Processes => Tab::Ports,
+                Tab::Processes => Tab::Docker,
+                Tab::Docker => Tab::Ports,
             };
             app.set_tab(next_tab);
         }

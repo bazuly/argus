@@ -61,6 +61,12 @@ fn draw_tabs(frame: &mut Frame, area: Rect, app: &mut App) {
         "  2:DEV Processes"
     };
 
+    let docker_label = if app.tab == Tab::Docker {
+        "▶ 3:Docker"
+    } else {
+        "  3:Docker"
+    };
+
     let ports_style = if app.tab == Tab::Ports {
         Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)
     } else {
@@ -73,10 +79,18 @@ fn draw_tabs(frame: &mut Frame, area: Rect, app: &mut App) {
         Style::new().fg(Color::DarkGray)
     };
 
+    let docker_style = if app.tab == Tab::Docker {
+        Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+    } else {
+        Style::new().fg(Color::DarkGray)
+    };
+
     let line = Line::from(vec![
         Span::styled(ports_label, ports_style),
         Span::raw("   "),
         Span::styled(processes_label, processes_style),
+        Span::raw("   "),
+        Span::styled(docker_label, docker_style),
     ]);
 
     let widget = Paragraph::new(line);
@@ -87,6 +101,7 @@ fn draw_main(frame: &mut Frame, area: Rect, app: &mut App) {
     match app.tab {
         Tab::Ports => draw_ports_table(frame, area, app),
         Tab::Processes => draw_processes_table(frame, area, app),
+        Tab::Docker => draw_docker_table(frame, area, app),
     }
 }
 
@@ -138,6 +153,66 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &mut App) {
     )
     .header(header)
     .block(Block::bordered().title(format!("Ports [{}/{}]", selected_row + 1, total)))
+    .row_highlight_style(
+        Style::new()
+            .bg(Color::DarkGray)
+            .add_modifier(Modifier::BOLD),
+    )
+    .highlight_symbol("▶ ");
+    frame.render_stateful_widget(widget, area, &mut app.table_state);
+}
+// TODO: REWRITE DRY ?
+fn draw_docker_table(frame: &mut Frame, area: Rect, app: &mut App) {
+    let Some(snapshot) = &app.snapshot else {
+        let widget =
+            Paragraph::new("Loading containers...").block(Block::bordered().title("Docker"));
+        frame.render_widget(widget, area);
+        return;
+    };
+
+    if let Some(error) = &snapshot.docker_error {
+        let widget = Paragraph::new(format!("Docker unavailable: {error}"))
+            .block(Block::bordered().title("Docker"));
+        frame.render_widget(widget, area);
+        return;
+    }
+
+    if snapshot.containers.is_empty() {
+        let widget =
+            Paragraph::new("No containers found.").block(Block::bordered().title("Docker"));
+        frame.render_widget(widget, area);
+        return;
+    }
+
+    let header = Row::new(vec!["NAME", "IMAGE", "PORTS", "STATUS"])
+        .style(Style::new().add_modifier(Modifier::BOLD))
+        .bottom_margin(1);
+
+    let rows: Vec<Row> = snapshot
+        .containers
+        .iter()
+        .map(|container| {
+            Row::new(vec![
+                container.name.clone(),
+                container.image.clone(),
+                format_host_ports(&container.host_ports),
+                container.status.clone(),
+            ])
+        })
+        .collect();
+    let selected_row = app.selected_row;
+    let total = snapshot.containers.len();
+    let widget = Table::new(
+        rows,
+        [
+            Constraint::Min(16),
+            Constraint::Min(14),
+            Constraint::Min(12),
+            Constraint::Length(10),
+        ],
+    )
+    .header(header)
+    .block(Block::bordered().title(format!("Docker [{}/{}]", selected_row + 1, total)))
     .row_highlight_style(
         Style::new()
             .bg(Color::DarkGray)
@@ -205,7 +280,7 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &mut App) {
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect) {
-    let text = "q: quit | r: refresh";
+    let text = "q: quit | r: refresh | 1-3: tabs";
     let widget = Paragraph::new(text);
     frame.render_widget(widget, area);
 }
@@ -236,4 +311,15 @@ fn format_pid(pid: Option<u32>) -> String {
         Some(value) => value.to_string(),
         None => "-".to_string(),
     }
+}
+
+fn format_host_ports(ports: &[u16]) -> String {
+    if ports.is_empty() {
+        return "-".to_string();
+    }
+    ports
+        .iter()
+        .map(|port| port.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }

@@ -2,6 +2,7 @@ use crate::models::DockerContainer;
 use anyhow::{Context, Result};
 use bollard::Docker;
 use bollard::models::ContainerSummary;
+use bollard::plugin::ContainerSummaryStateEnum;
 use bollard::query_parameters::ListContainersOptionsBuilder;
 use tokio::runtime::Runtime;
 
@@ -23,14 +24,10 @@ async fn collect_async() -> Result<Vec<DockerContainer>> {
     for summary in summaries {
         let host_ports = extract_host_ports(&summary);
 
-        if host_ports.is_empty() {
-            continue;
-        }
-
         result.push(DockerContainer {
             name: container_name(&summary),
-
             image: short_image(summary.image.as_deref().unwrap_or("unknown")),
+            status: container_status(summary.state.as_ref()),
             host_ports,
         });
     }
@@ -64,4 +61,21 @@ fn container_name(summary: &ContainerSummary) -> String {
         .and_then(|names| names.first())
         .map(|name| name.trim_start_matches("/").to_string())
         .unwrap_or_else(|| "unknown".to_string())
+}
+
+fn container_status(state: Option<&ContainerSummaryStateEnum>) -> String {
+    use ContainerSummaryStateEnum::*;
+    let label = match state {
+        Some(RUNNING) => "running",
+        Some(EXITED) => "exited",
+        Some(CREATED) => "created",
+        Some(PAUSED) => "paused",
+        Some(RESTARTING) => "restarting",
+        Some(REMOVING) => "removing",
+        Some(DEAD) => "dead",
+        Some(EMPTY) | None => "unknown",
+        Some(STOPPING) => "stopping",
+    };
+
+    label.to_string()
 }

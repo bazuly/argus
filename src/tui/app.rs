@@ -1,5 +1,6 @@
-use crate::collectors::{ports, processes, system};
-use crate::models::{DevProcess, PortBinding, SystemStats};
+use crate::collectors::docker::collect;
+use crate::collectors::{enrich, ports, processes, system};
+use crate::models::{DevProcess, DockerContainer, PortBinding, SystemStats};
 use anyhow::Result;
 
 const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
@@ -7,6 +8,8 @@ const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
 pub struct Snapshot {
     pub ports: Vec<PortBinding>,
     pub processes: Vec<DevProcess>,
+    pub containers: Vec<DockerContainer>,
+    pub docker_error: Option<String>,
     pub stats: SystemStats,
 }
 
@@ -25,6 +28,7 @@ pub struct App {
 pub enum Tab {
     Ports,
     Processes,
+    Docker,
 }
 
 impl App {
@@ -44,6 +48,7 @@ impl App {
     pub fn set_tab(&mut self, tab: Tab) {
         self.tab = tab;
         self.selected_row = 0;
+        self.list_offset = 0;
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
@@ -53,13 +58,19 @@ impl App {
         let processes = processes::collect(true)?;
         let stats = system::collect()?;
 
-        if let Ok(containers) = crate::collectors::docker::collect() {
-            crate::collectors::enrich::attach_docker(&mut ports, &containers);
-        }
+        let (containers, docker_error) = match collect() {
+            Ok(containers) => {
+                enrich::attach_docker(&mut ports, &containers);
+                (containers, None)
+            }
+            Err(error) => (Vec::new(), Some(error.to_string())),
+        };
 
         self.snapshot = Some(Snapshot {
             ports,
             processes,
+            containers,
+            docker_error,
             stats,
         });
 
@@ -78,6 +89,7 @@ impl App {
         match self.tab {
             Tab::Ports => snapshot.ports.len(),
             Tab::Processes => snapshot.processes.len(),
+            Tab::Docker => snapshot.containers.len(),
         }
     }
 

@@ -38,5 +38,6 @@ pub struct SystemStats {
 pub struct DockerContainer {
     pub name: String,
     pub image: String,
+    pub status: String,
     pub host_ports: Vec<u16>,
 }
