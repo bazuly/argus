@@ -1,6 +1,7 @@
 use crate::collectors::docker::collect;
 use crate::collectors::{enrich, ports, processes, system};
 use crate::models::{DevProcess, DockerContainer, PortBinding, SystemStats};
+use crate::tui::search;
 use anyhow::Result;
 
 const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
@@ -23,12 +24,21 @@ pub struct App {
     pub should_quit: bool,
     pub needs_refresh: bool,
     pub last_error: Option<String>,
+    pub input_mode: InputMode,
+    pub search_query: String,
+    pub search_match_index: usize,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tab {
     Ports,
     Processes,
     Docker,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum InputMode {
+    Normal,
+    Search,
 }
 
 impl App {
@@ -42,6 +52,9 @@ impl App {
             should_quit: false,
             needs_refresh: true,
             last_error: None,
+            input_mode: InputMode::Normal,
+            search_query: String::new(),
+            search_match_index: 0,
         }
     }
 
@@ -49,6 +62,9 @@ impl App {
         self.tab = tab;
         self.selected_row = 0;
         self.list_offset = 0;
+        self.search_query.clear();
+        self.input_mode = InputMode::Normal;
+        self.search_match_index = 0;
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
@@ -128,5 +144,60 @@ impl App {
         } else if self.selected_row >= self.list_offset + viewport_rows {
             self.list_offset = self.selected_row - viewport_rows + 1;
         }
+    }
+
+    pub fn start_search(&mut self) {
+        self.input_mode = InputMode::Search;
+        self.search_query.clear();
+        self.search_match_index = 0;
+    }
+
+    pub fn cancel_search(&mut self) {
+        self.input_mode = InputMode::Normal;
+        self.search_query.clear();
+        self.search_match_index = 0;
+    }
+
+    pub fn push_search_char(&mut self, ch: char) {
+        self.search_query.push(ch);
+    }
+
+    pub fn pop_search_char(&mut self) {
+        self.search_query.pop();
+    }
+
+    pub fn apply_search(&mut self, step: isize) {
+        let matches = search::find_matches(self);
+        if matches.is_empty() {
+            return;
+        }
+
+        let count = matches.len();
+        let index = if step == 0 {
+            0
+        } else {
+            (self.search_match_index as isize + step).rem_euclid(count as isize) as usize
+        };
+
+        self.search_match_index = index;
+        let row = matches[index];
+        self.selected_row = row;
+        self.table_state.select(Some(row));
+    }
+
+    pub fn search_status(&self) -> Option<String> {
+        if self.search_query.trim().is_empty() {
+            return None;
+        }
+        let matches = search::find_matches(self);
+        if matches.is_empty() {
+            return Some(format!("/{}", self.search_query) + "  (no matches)");
+        }
+        Some(format!(
+            "/{}  [{}/{}]",
+            self.search_query,
+            self.search_match_index + 1,
+            matches.len()
+        ))
     }
 }

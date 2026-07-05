@@ -26,7 +26,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     draw_header(frame, chunks[0], app);
     draw_tabs(frame, chunks[1], app);
     draw_main(frame, chunks[2], app);
-    draw_footer(frame, chunks[3]);
+    draw_footer(frame, chunks[3], app);
 }
 
 fn viewport_rows(area: Rect) -> usize {
@@ -279,8 +279,14 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &mut App) {
     frame.render_stateful_widget(widget, area, &mut app.table_state);
 }
 
-fn draw_footer(frame: &mut Frame, area: Rect) {
-    let text = "q: quit | r: refresh | 1-3: tabs";
+fn draw_footer(frame: &mut Frame, area: Rect, app: &mut App) {
+    let text = if app.input_mode == crate::tui::app::InputMode::Search {
+        format!("search: {}_", app.search_query)
+    } else if let Some(status) = app.search_status() {
+        format!("q: quit | r: refresh | /: search | n/N: next | 1-3: tabs | {status}")
+    } else {
+        "q: quit | r: refresh | /: search | n/N: next | 1-3: tabs".to_string()
+    };
     let widget = Paragraph::new(text);
     frame.render_widget(widget, area);
 }
