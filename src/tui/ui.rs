@@ -1,5 +1,5 @@
 use crate::models::Protocol;
-use crate::tui::app::{App, Tab};
+use crate::tui::app::{App, InputMode, Tab};
 
 use crate::output::table::format_port_owner;
 use crate::output::table::truncate_text;
@@ -279,14 +279,17 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &mut App) {
     frame.render_stateful_widget(widget, area, &mut app.table_state);
 }
 
-fn draw_footer(frame: &mut Frame, area: Rect, app: &mut App) {
-    let text = if app.input_mode == crate::tui::app::InputMode::Search {
+fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
+    let text = if app.input_mode == InputMode::Search {
         format!("search: {}_", app.search_query)
-    } else if let Some(status) = app.search_status() {
-        format!("q: quit | r: refresh | /: search | n/N: next | 1-3: tabs | {status}")
+    } else if let Some(status) = &app.status_message {
+        format!("{status} | q: quit | r: refresh | /: search | x: kill (processes)")
+    } else if let Some(search) = app.select_search_status() {
+        format!("q: quit | r: refresh | /: search | x: kill | 1-3: tabs | {search}")
     } else {
-        "q: quit | r: refresh | /: search | n/N: next | 1-3: tabs".to_string()
+        "q: quit | r: refresh | /: search | x: kill (processes) | 1-3: tabs".to_string()
     };
+
     let widget = Paragraph::new(text);
     frame.render_widget(widget, area);
 }

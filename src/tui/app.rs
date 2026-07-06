@@ -1,7 +1,7 @@
+use crate::actions::search;
 use crate::collectors::docker::collect;
 use crate::collectors::{enrich, ports, processes, system};
 use crate::models::{DevProcess, DockerContainer, PortBinding, SystemStats};
-use crate::tui::search;
 use anyhow::Result;
 
 const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
@@ -27,6 +27,7 @@ pub struct App {
     pub input_mode: InputMode,
     pub search_query: String,
     pub search_match_index: usize,
+    pub status_message: Option<String>,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tab {
@@ -55,6 +56,7 @@ impl App {
             input_mode: InputMode::Normal,
             search_query: String::new(),
             search_match_index: 0,
+            status_message: None,
         }
     }
 
@@ -185,7 +187,7 @@ impl App {
         self.table_state.select(Some(row));
     }
 
-    pub fn search_status(&self) -> Option<String> {
+    pub fn select_search_status(&self) -> Option<String> {
         if self.search_query.trim().is_empty() {
             return None;
         }
@@ -199,5 +201,41 @@ impl App {
             self.search_match_index + 1,
             matches.len()
         ))
+    }
+
+    // impl Into<String> in Rust means: receive any method
+    // that can be mute to string
+    pub fn set_status(&mut self, message: impl Into<String>) {
+        self.status_message = Some(message.into());
+    }
+
+    // pub fn clear_status(&mut self) {
+    //     self.status_message = None;
+    // }
+
+    pub fn selected_process(&self) -> Option<&DevProcess> {
+        if self.tab != Tab::Processes {
+            return None;
+        }
+        let snapshot = self.snapshot.as_ref()?;
+        snapshot.processes.get(self.selected_row)
+    }
+
+    pub fn kill_selected_process(&mut self) {
+        let Some(process) = self.selected_process().cloned() else {
+            self.set_status("no process selected");
+            return;
+        };
+
+        match crate::actions::process::kill_process(process.pid) {
+            Ok(()) => {
+                self.set_status(format!(
+                    "process killed {} (pid: {})",
+                    process.name, process.pid,
+                ));
+                self.needs_refresh = true;
+            }
+            Err(err) => self.set_status(format!("killed process error {err}")),
+        }
     }
 }

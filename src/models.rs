@@ -17,7 +17,7 @@ pub struct PortBinding {
     pub container_image: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct DevProcess {
     pub pid: u32,
     pub name: String,

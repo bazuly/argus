@@ -88,6 +88,12 @@ fn handle_normal_key(app: &mut App, key: KeyEvent) {
             app.table_state.select(Some(last));
         }
 
+        KeyCode::Char('x') | KeyCode::Char('X') => {
+            if app.tab == Tab::Processes {
+                app.kill_selected_process();
+            }
+        }
+
         _ => {}
     }
 }
