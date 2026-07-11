@@ -280,20 +280,33 @@ fn draw_processes_table(frame: &mut Frame, area: Rect, app: &mut App) {
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
-    let text = if app.input_mode == InputMode::Search {
+    let text = if let InputMode::ConfirmDockerRemove { name, .. } = &app.input_mode {
+        format!("Remove {name} [y/N]")
+    } else if app.input_mode == InputMode::Search {
         format!("search: {}_", app.search_query)
     } else if let Some(status) = &app.status_message {
-        format!("{status} | q: quit | r: refresh | /: search | x: kill (processes)")
+        format!("{status} | {}", footer_hints(app.tab))
+        // format!("{status} | q: quit | r: refresh | /: search | x: kill (processes)")
     } else if let Some(search) = app.select_search_status() {
-        format!("q: quit | r: refresh | /: search | x: kill | 1-3: tabs | {search}")
+        format!("{search} | {}", footer_hints(app.tab))
+        // format!("q: quit | r: refresh | /: search | x: kill | 1-3: tabs | {search}")
     } else {
-        "q: quit | r: refresh | /: search | x: kill (processes) | 1-3: tabs".to_string()
+        footer_hints(app.tab).to_string()
     };
 
     let widget = Paragraph::new(text);
     frame.render_widget(widget, area);
 }
 
+fn footer_hints(tab: Tab) -> &'static str {
+    match tab {
+        Tab::Ports => "q: quit | r: refresh | /: search | 1-3: tabs",
+        Tab::Processes => "q: quit | r: refresh | /: search | x: kill | 1-3: tabs",
+        Tab::Docker => {
+            "q: quit | r: refresh | /: search | s: stop | S: restart | d: remove | 1-3: tabs"
+        }
+    }
+}
 // formatting only for representation
 fn bytes_to_gb(bytes: u64) -> f64 {
     bytes as f64 / BYTES_IN_GB

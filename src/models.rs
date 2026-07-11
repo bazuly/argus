@@ -36,6 +36,7 @@ pub struct SystemStats {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DockerContainer {
+    pub id: String,
     pub name: String,
     pub image: String,
     pub status: String,

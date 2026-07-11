@@ -16,7 +16,8 @@ async fn collect_async() -> Result<Vec<DockerContainer>> {
     let docker = Docker::connect_with_socket_defaults()
         .context("failed to connect to docker socket (/var/run/docker.sock)")?;
 
-    let options = ListContainersOptionsBuilder::default().build();
+    // collect all docker containers, analog "docker ps -a"
+    let options = ListContainersOptionsBuilder::default().all(true).build();
     let summaries = docker.list_containers(Some(options)).await?;
 
     let mut result: Vec<DockerContainer> = Vec::new();
@@ -25,12 +26,16 @@ async fn collect_async() -> Result<Vec<DockerContainer>> {
         let host_ports = extract_host_ports(&summary);
 
         result.push(DockerContainer {
+            id: container_id(&summary),
             name: container_name(&summary),
             image: short_image(summary.image.as_deref().unwrap_or("unknown")),
             status: container_status(summary.state.as_ref()),
             host_ports,
         });
     }
+
+    // sort result by name
+    result.sort_by(|left, right| left.name.cmp(&right.name));
     Ok(result)
 }
 
@@ -52,6 +57,14 @@ fn extract_host_ports(summary: &ContainerSummary) -> Vec<u16> {
 
 fn short_image(image: &str) -> String {
     image.rsplit('/').next().unwrap_or(image).to_string()
+}
+
+fn container_id(summary: &ContainerSummary) -> String {
+    summary
+        .id
+        .clone()
+        // edge case, better catch container_name instead of None
+        .unwrap_or_else(|| container_name(summary))
 }
 
 fn container_name(summary: &ContainerSummary) -> String {

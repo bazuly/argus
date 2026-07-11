@@ -36,10 +36,11 @@ pub enum Tab {
     Docker,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum InputMode {
     Normal,
     Search,
+    ConfirmDockerRemove { id: String, name: String },
 }
 
 impl App {
@@ -67,6 +68,7 @@ impl App {
         self.search_query.clear();
         self.input_mode = InputMode::Normal;
         self.search_match_index = 0;
+        self.input_mode = InputMode::Normal;
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
@@ -237,5 +239,79 @@ impl App {
             }
             Err(err) => self.set_status(format!("killed process error {err}")),
         }
+    }
+
+    pub fn selected_container(&self) -> Option<&DockerContainer> {
+        if self.tab != Tab::Docker {
+            return None;
+        }
+        let snapshot = self.snapshot.as_ref()?;
+        snapshot.containers.get(self.selected_row)
+    }
+
+    pub fn stop_selected_container(&mut self) {
+        // if confirm remove is active - refresh
+        self.cancel_pending_action();
+        let Some(container) = self.selected_container().cloned() else {
+            self.set_status("No container to select");
+            return;
+        };
+
+        match crate::actions::docker::stop_container(&container.id) {
+            Ok(()) => {
+                self.set_status(format!("stopped {}", container.name));
+                self.needs_refresh = true;
+            }
+            Err(error) => self.set_status(format!("stop failed container: {error}")),
+        }
+    }
+
+    pub fn restart_selected_container(&mut self) {
+        let Some(container) = self.selected_container().cloned() else {
+            self.set_status("No container to select");
+            return;
+        };
+
+        match crate::actions::docker::restart_container(&container.id) {
+            Ok(()) => {
+                self.set_status(format!("restarted {}", container.name));
+                self.needs_refresh = true;
+            }
+            Err(error) => self.set_status(format!(
+                "restart
+             failed container: {error}"
+            )),
+        }
+    }
+
+    pub fn request_remove_selected_container(&mut self) {
+        let Some(container) = self.selected_container().cloned() else {
+            self.set_status("no container selected");
+            return;
+        };
+        self.input_mode = InputMode::ConfirmDockerRemove {
+            id: container.id,
+            name: container.name,
+        }
+    }
+
+    pub fn confirm_docker_remove(&mut self) {
+        let InputMode::ConfirmDockerRemove { id, name } = self.input_mode.clone() else {
+            return;
+        };
+
+        self.input_mode = InputMode::Normal;
+
+        match crate::actions::docker::remove_container(&id) {
+            Ok(()) => {
+                self.set_status(format!("removed {name}"));
+                self.needs_refresh = true;
+            }
+            Err(error) => self.set_status(format!("remove failed: {error}")),
+        }
+    }
+
+    pub fn cancel_pending_action(&mut self) {
+        self.input_mode = InputMode::Normal;
     }
 }
