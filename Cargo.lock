@@ -91,6 +91,7 @@ dependencies = [
  "clap",
  "comfy-table",
  "crossterm",
+ "futures-util",
  "netstat2",
  "ratatui",
  "serde",

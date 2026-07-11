@@ -41,4 +41,6 @@ pub struct DockerContainer {
     pub image: String,
     pub status: String,
     pub host_ports: Vec<u16>,
+    pub cpu_percent: Option<f32>,
+    pub memory_bytes: Option<u64>,
 }

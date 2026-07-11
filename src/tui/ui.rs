@@ -161,7 +161,7 @@ fn draw_ports_table(frame: &mut Frame, area: Rect, app: &mut App) {
     .highlight_symbol("▶ ");
     frame.render_stateful_widget(widget, area, &mut app.table_state);
 }
-// TODO: REWRITE DRY ?
+
 fn draw_docker_table(frame: &mut Frame, area: Rect, app: &mut App) {
     let Some(snapshot) = &app.snapshot else {
         let widget =
@@ -184,7 +184,7 @@ fn draw_docker_table(frame: &mut Frame, area: Rect, app: &mut App) {
         return;
     }
 
-    let header = Row::new(vec!["NAME", "IMAGE", "PORTS", "STATUS"])
+    let header = Row::new(vec!["NAME", "IMAGE", "PORTS", "CPU", "MEM", "STATUS"])
         .style(Style::new().add_modifier(Modifier::BOLD))
         .bottom_margin(1);
 
@@ -196,6 +196,8 @@ fn draw_docker_table(frame: &mut Frame, area: Rect, app: &mut App) {
                 container.name.clone(),
                 container.image.clone(),
                 format_host_ports(&container.host_ports),
+                format_optional_cpu(container.cpu_percent),
+                format_optional_memory(container.memory_bytes),
                 container.status.clone(),
             ])
         })
@@ -205,9 +207,11 @@ fn draw_docker_table(frame: &mut Frame, area: Rect, app: &mut App) {
     let widget = Table::new(
         rows,
         [
-            Constraint::Min(16),
             Constraint::Min(14),
             Constraint::Min(12),
+            Constraint::Min(10),
+            Constraint::Length(7),
+            Constraint::Length(10),
             Constraint::Length(10),
         ],
     )
@@ -344,4 +348,18 @@ fn format_host_ports(ports: &[u16]) -> String {
         .map(|port| port.to_string())
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn format_optional_cpu(cpu: Option<f32>) -> String {
+    match cpu {
+        Some(value) => format!("{value:.1}%"),
+        None => "-".to_string(),
+    }
+}
+
+fn format_optional_memory(bytes: Option<u64>) -> String {
+    match bytes {
+        Some(value) => format_memory_mb(value),
+        None => "-".to_string(),
+    }
 }
