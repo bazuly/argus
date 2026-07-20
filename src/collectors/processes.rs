@@ -62,31 +62,75 @@ fn format_cmdline(cmd_parts: &[OsString]) -> String {
 
 fn is_dev_process(name: &str, cmdline: &str) -> bool {
     const DEV_MARKERS: &[&str] = &[
+        // JS
         "node",
         "npm",
         "pnpm",
         "yarn",
         "bun",
+        "deno",
         "vite",
         "next",
+        "nuxt",
+        "nest",
+        "webpack",
+        "esbuild",
+        "turbo",
+        // Python
         "python",
         "uvicorn",
         "gunicorn",
         "django",
         "flask",
+        "fastapi",
+        "poetry",
+        "celery",
+        "manage.py",
+        // Rust
         "cargo",
         "rustc",
         "target/debug",
         "target/release",
+        // Go
+        "go run",
+        "air",
+        // JVM
+        "java",
+        "gradle",
+        "mvn",
+        "maven",
+        "spring",
+        // .NET
+        "dotnet",
+        // Ruby / PHP
+        "ruby",
+        "rails",
+        "puma",
+        "php",
+        "composer",
+        "artisan",
+        // DB / cache
         "postgres",
         "redis",
         "mongod",
         "mysql",
-        "java",
-        "gradle",
-        "mvn",
+        "mariadb",
+        "elasticsearch",
+        "rabbitmq",
+        "kafka",
+        "minio",
+        "memcached",
+        // containers / k8s local
         "docker",
+        "compose",
+        "podman",
         "kubectl",
+        "minikube",
+        "kind",
+        // local reverse proxy
+        "nginx",
+        "caddy",
+        "traefik",
     ];
 
     let haystack: String = format!("{} {}", name, cmdline).to_lowercase();

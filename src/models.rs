@@ -32,6 +32,8 @@ pub struct SystemStats {
     pub total_memory: u64,
     pub used_memory: u64,
     pub global_cpu_usage: f32,
+    pub cpu_temp_c: Option<f32>,
+    pub gpu_temp_c: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize)]

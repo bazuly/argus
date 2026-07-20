@@ -30,7 +30,6 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
 }
 
 fn viewport_rows(area: Rect) -> usize {
-    // 2 = рамка Block, 1 = header, 1 = bottom_margin у header
     area.height.saturating_sub(4) as usize
 }
 
@@ -41,7 +40,11 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &mut App) {
         let used_gb = bytes_to_gb(snapshot.stats.used_memory);
         let total_gb = bytes_to_gb(snapshot.stats.total_memory);
         let cpu = snapshot.stats.global_cpu_usage;
-        format!("argus | RAM {used_gb:.1}/{total_gb:.1} GB | CPU {cpu:.1}%")
+        let cpu_temp = match snapshot.stats.cpu_temp_c {
+            Some(temp) => format!(" {temp:.0}°C"),
+            None => String::new(),
+        };
+        format!("argus | RAM {used_gb:.1}/{total_gb:.1} GB | CPU {cpu:.1}%{cpu_temp}")
     } else {
         "argus | Loading...".to_string()
     };

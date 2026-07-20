@@ -8,7 +8,7 @@ pub fn run() -> Result<()> {
     let result: Result<()> = ratatui::run(|terminal| {
         let mut app = App::new();
 
-        let refresh_every = Duration::from_secs(2);
+        let refresh_every = Duration::from_secs(5);
         let mut last_refresh = Instant::now() - refresh_every;
 
         loop {

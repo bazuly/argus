@@ -66,7 +66,18 @@ pub fn print_stats(stats: &SystemStats) {
     };
 
     println!("RAM:  {used_gb} / {total_gb}  ({used_percent:.1}% used)");
-    println!("CPU:  {}", format_cpu(stats.global_cpu_usage));
+    println!(
+        "CPU:  {}{}",
+        format_cpu(stats.global_cpu_usage),
+        format_optional_temp(stats.cpu_temp_c)
+    );
+}
+
+fn format_optional_temp(temp_c: Option<f32>) -> String {
+    match temp_c {
+        Some(temp) => format!("  ({temp:.0}°C)"),
+        None => String::new(),
+    }
 }
 
 fn format_memory_mb(bytes: u64) -> String {
