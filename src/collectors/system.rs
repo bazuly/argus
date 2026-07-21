@@ -1,5 +1,6 @@
 use crate::models::SystemStats;
 use anyhow::Result;
+use std::process::Command;
 use std::thread;
 use sysinfo::{Components, MINIMUM_CPU_UPDATE_INTERVAL, System};
 
@@ -22,6 +23,16 @@ pub fn collect() -> Result<SystemStats> {
 }
 
 fn read_cpu_temp_c() -> Option<f32> {
+    read_cpu_temp_from_sysinfo().or_else(|| {
+        if is_wsl() {
+            read_cpu_temp_from_windows_acpi()
+        } else {
+            None
+        }
+    })
+}
+
+fn read_cpu_temp_from_sysinfo() -> Option<f32> {
     let components = Components::new_with_refreshed_list();
     if components.is_empty() {
         return None;
@@ -129,9 +140,69 @@ fn is_core_sensor(label: &str) -> bool {
     label.contains("core ") || label.contains("coretemp")
 }
 
+fn is_wsl() -> bool {
+    std::env::var_os("WSL_DISTRO_NAME").is_some()
+        || std::fs::read_to_string("/proc/version")
+            .map(|v| v.to_ascii_lowercase().contains("microsoft"))
+            .unwrap_or(false)
+}
+
 fn max_of(values: &[f32]) -> Option<f32> {
     values
         .iter()
         .copied()
         .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+}
+
+fn read_cpu_temp_from_windows_acpi() -> Option<f32> {
+    // CurrentTemperature is in tenths of Kelvin.
+    // Celsius = CurrentTemperature / 10 - 273.15
+    // We print one number per zone; Rust takes the max.
+    const PS: &str = r#"
+$ErrorActionPreference = 'Stop'
+$zones = Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction Stop
+foreach ($z in $zones) {
+    $c = ($z.CurrentTemperature / 10.0) - 273.15
+    if ($c -gt 0 -and $c -lt 150) {
+        Write-Output $c
+    }
+}
+"#;
+    let output = Command::new("powershell.exe")
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            PS,
+        ])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    parse_acpi_temps(&stdout)
+}
+
+fn parse_acpi_temps(stdout: &str) -> Option<f32> {
+    let mut temps: Vec<f32> = Vec::new();
+
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        // PowerShell may print "61.05" or "61,05" depending on locale
+        let normalized_temp = line.replace(',', ".");
+        if let Ok(temp) = normalized_temp.parse::<f32>() {
+            if temp.is_finite() && temp > 0.0 && temp < 150.0 {
+                temps.push(temp);
+            }
+        }
+    }
+    // parse to float => push into temp vector => get max temp value
+    max_of(&temps)
 }
