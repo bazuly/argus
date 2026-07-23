@@ -206,3 +206,38 @@ fn parse_acpi_temps(stdout: &str) -> Option<f32> {
     // parse to float => push into temp vector => get max temp value
     max_of(&temps)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_acpi_temps_takes_max() {
+        assert_eq!(parse_acpi_temps("45.0\n61.5\n50\n"), Some(61.5));
+    }
+
+    #[test]
+    fn parse_acpi_temps_accepts_comma_decimal() {
+        assert_eq!(parse_acpi_temps("61,5\n"), Some(61.5));
+    }
+
+    #[test]
+    fn parse_acpi_temps_empty() {
+        assert_eq!(parse_acpi_temps(""), None);
+        assert_eq!(parse_acpi_temps("nope\n"), None);
+    }
+
+    #[test]
+    fn looks_like_cpu_and_not_gpu() {
+        assert!(looks_like_cpu_sensor("package id 0"));
+        assert!(looks_like_cpu_sensor("cpu-thermal"));
+        assert!(is_non_cpu_sensor("amdgpu"));
+        assert!(!is_non_cpu_sensor("coretemp"));
+    }
+
+    #[test]
+    fn max_of_works() {
+        assert_eq!(max_of(&[1.0, 3.0, 2.0]), Some(3.0));
+        assert_eq!(max_of(&[]), None);
+    }
+}

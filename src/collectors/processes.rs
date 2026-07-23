@@ -136,3 +136,30 @@ fn is_dev_process(name: &str, cmdline: &str) -> bool {
     let haystack: String = format!("{} {}", name, cmdline).to_lowercase();
     DEV_MARKERS.iter().any(|marker| haystack.contains(marker))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::OsString;
+
+    #[test]
+    fn detects_node_and_cargo_as_dev() {
+        assert!(is_dev_process("node", "node server.js"));
+        assert!(is_dev_process("cargo", "cargo run"));
+        assert!(is_dev_process("python3", "uvicorn app:main"));
+    }
+    #[test]
+    fn rejects_plain_shell() {
+        assert!(!is_dev_process("bash", "-bash"));
+        assert!(!is_dev_process("sleep", "sleep 10"));
+    }
+    #[test]
+    fn format_cmdline_joins_parts() {
+        let parts = [OsString::from("node"), OsString::from("/app/vite")];
+        assert_eq!(format_cmdline(&parts), "node /app/vite");
+    }
+    #[test]
+    fn format_cmdline_empty() {
+        assert_eq!(format_cmdline(&[]), "");
+    }
+}

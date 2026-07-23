@@ -29,3 +29,20 @@ pub fn kill_process(pid: u32) -> Result<()> {
 
     bail!("failed to kill process: {pid}, probably permission denied");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn refuse_to_kill_myself() {
+        let err = kill_process(std::process::id()).unwrap_err();
+        assert!(err.to_string().contains("refusing to kill argus itself"))
+    }
+
+    #[test]
+    fn missing_pid_errors() {
+        let err = kill_process(u32::MAX - 1).unwrap_err();
+        assert!(err.to_string().contains("not found"))
+    }
+}
