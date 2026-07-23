@@ -173,6 +173,6 @@ mod tests {
 
     #[test]
     fn truncate_adds_ellipsis_for_long_text() {
-        assert_eq!()
+        assert_eq!(truncate_text("hello world", 5), "hello...")
     }
 }
