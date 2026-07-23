@@ -73,3 +73,10 @@ fn format_ports(container: &DockerContainer) -> String {
         .collect::<Vec<_>>()
         .join(", ")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{Protocol, SystemStats};
+    use crate::tui::app::Snapshot;
+}

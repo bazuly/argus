@@ -136,3 +136,43 @@ pub fn format_port_owner(binding: &PortBinding) -> String {
 
     "-".to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Protocol;
+
+    fn bindings(process_name: Option<&str>, container_name: Option<&str>) -> PortBinding {
+        PortBinding {
+            port: 8080,
+            protocol: Protocol::Tcp,
+            address: "127.0.0.1".to_string(),
+            pid: None,
+            process_name: process_name.map(str::to_string),
+            container_name: container_name.map(str::to_string),
+            container_image: None,
+        }
+    }
+
+    #[test]
+    fn owner_prefers_docker_over_process() {
+        let port = bindings(Some("Node"), Some("redis-dev"));
+        assert_eq!(format_port_owner(&port), "redis-dev (docker)")
+    }
+
+    #[test]
+    fn owner_is_dash_when_unknown() {
+        let port = bindings(None, None);
+        assert_eq!(format_port_owner(&port), "-");
+    }
+
+    #[test]
+    fn truncate_text_keeps_short_text() {
+        assert_eq!(truncate_text("hello", 10), "hello")
+    }
+
+    #[test]
+    fn truncate_adds_ellipsis_for_long_text() {
+        assert_eq!()
+    }
+}
