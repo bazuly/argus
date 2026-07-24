@@ -1,10 +1,9 @@
 use crate::actions::search;
 use crate::collectors::docker::collect;
 use crate::collectors::{enrich, ports, processes, system};
+use crate::config::Config;
 use crate::models::{DevProcess, DockerContainer, PortBinding, SystemStats};
 use anyhow::Result;
-
-const TUI_IGNORED_PORTS: &[u16] = &[53, 323];
 
 pub struct Snapshot {
     pub ports: Vec<PortBinding>,
@@ -16,6 +15,7 @@ pub struct Snapshot {
 
 // TUI app state
 pub struct App {
+    pub config: Config,
     pub snapshot: Option<Snapshot>, // None before first refresh
     pub tab: Tab,
     pub selected_row: usize,
@@ -44,8 +44,9 @@ pub enum InputMode {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         Self {
+            config,
             snapshot: None,
             tab: Tab::Ports,
             selected_row: 0,
@@ -66,16 +67,14 @@ impl App {
         self.selected_row = 0;
         self.list_offset = 0;
         self.search_query.clear();
-        self.input_mode = InputMode::Normal;
         self.search_match_index = 0;
         self.input_mode = InputMode::Normal;
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
         let mut ports = ports::collect(None)?;
-        // ignore default ports in tui
-        ports.retain(|binding| !TUI_IGNORED_PORTS.contains(&binding.port));
-        let processes = processes::collect(true)?;
+        ports.retain(|binding| !self.config.ignored_ports.contains(&binding.port));
+        let processes = processes::collect(true, &self.config.extra_dev_markers)?;
         let stats = system::collect()?;
 
         let (containers, docker_error) = match collect() {
@@ -355,7 +354,7 @@ mod tests {
     }
 
     fn app_with_ports(n: usize) -> App {
-        let mut app = App::new();
+        let mut app = App::new(Config::default());
         app.tab = Tab::Ports;
         app.snapshot = Some(snapshot_ports(n));
         app.needs_refresh = false;
@@ -375,7 +374,7 @@ mod tests {
 
     #[test]
     fn move_selection_noop_when_empty() {
-        let mut app = App::new();
+        let mut app = App::new(Config::default());
         app.move_selection(1);
         assert_eq!(app.selected_row, 0);
     }
@@ -390,7 +389,7 @@ mod tests {
 
     #[test]
     fn clamp_selection_clears_when_list_empty() {
-        let mut app = App::new();
+        let mut app = App::new(Config::default());
         app.selected_row = 105;
         app.list_offset = 2;
 
@@ -470,7 +469,7 @@ mod tests {
 
     #[test]
     fn start_and_cancel_search() {
-        let mut app = App::new();
+        let mut app = App::new(Config::default());
         app.search_query = "old".to_string();
 
         app.start_search();

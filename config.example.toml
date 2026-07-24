@@ -1,0 +1,16 @@
+# Copy to the OS config path and edit:
+#   Linux / WSL:  ~/.config/argus/config.toml
+#   macOS:        ~/Library/Application Support/argus/config.toml
+#   Windows:      %APPDATA%\argus\config.toml
+#
+# Check the resolved path with:
+#   cargo run -- config
+
+# TUI auto-refresh interval (seconds)
+refresh_secs = 5
+
+# Ports hidden on the TUI Ports tab
+ignored_ports = [53, 323]
+
+# Extra "dev process" markers (added to the built-in list)
+# extra_dev_markers = ["webpack-dev-server", "my-legacy-app"]

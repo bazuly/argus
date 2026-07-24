@@ -1,14 +1,17 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(version, about, name = "argus")]
 pub struct Cli {
+    /// Path to config.toml (default: platform config dir)
+    #[arg(long, global = true)]
+    pub config: Option<PathBuf>,
+
     #[command(subcommand)]
     pub command: Command,
 }
 
-// cli commands
-// example: cargo run ports/stats/ps
 #[derive(Subcommand, Debug)]
 pub enum Command {
     /// Interactive dashboard (TUI)
@@ -26,6 +29,9 @@ pub enum Command {
     /// System stats
     #[command(aliases = ["st", "sys"])]
     Stats(StatsArgs),
+
+    /// Show config path and effective settings
+    Config,
 }
 
 #[derive(Parser, Debug, Clone, Copy)]
@@ -40,7 +46,7 @@ pub struct PortsArgs {
 #[derive(Parser, Debug, Clone, Copy)]
 pub struct PsArgs {
     #[arg(long, short)]
-    pub dev_only: bool, // show only dev processes
+    pub dev_only: bool,
 
     #[arg(long, value_enum, default_value_t = OutputFormat::Table)]
     pub format: OutputFormat,

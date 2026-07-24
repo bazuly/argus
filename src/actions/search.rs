@@ -132,7 +132,7 @@ mod tests {
     }
 
     fn app_with(tab: Tab, snapshot: Snapshot, query: &str) -> App {
-        let mut app = App::new();
+        let mut app = App::new(crate::config::Config::default());
         app.tab = tab;
         app.snapshot = Some(snapshot);
         app.search_query = query.to_string();
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn no_snapshot_returns_no_matches() {
-        let mut app = App::new();
+        let mut app = App::new(crate::config::Config::default());
         app.search_query = "8080".to_string();
         assert!(find_matches(&app).is_empty());
     }

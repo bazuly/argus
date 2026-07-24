@@ -158,14 +158,37 @@ collectors/   read from the OS and Docker
 actions/      kill processes, stop/restart/remove containers
 output/       CLI tables and JSON
 tui/          the interactive UI
+config.rs     user settings (TOML)
 models.rs     shared types
 ```
 
 Reading and changing things stay separate on purpose. Collectors don’t kill anything; the UI doesn’t talk to Docker directly for stop/remove.
 
+### Config
+
+Optional file — if missing, built-in defaults are used:
+
+```bash
+# see resolved path + effective values
+cargo run -- config
+
+# Linux / WSL example path
+mkdir -p ~/.config/argus
+cp config.example.toml ~/.config/argus/config.toml
+```
+
+You can also pass an explicit file:
+
+```bash
+cargo run -- --config ./config.example.toml config
+cargo run -- --config ./config.example.toml tui
+```
+
+Settings today: `refresh_secs`, `ignored_ports`, `extra_dev_markers`.
+
 ### Libraries
 
-Built with clap, ratatui, crossterm, sysinfo, netstat2, bollard, comfy-table, and serde.
+Built with clap, ratatui, crossterm, sysinfo, netstat2, bollard, comfy-table, serde, toml, and directories.
 
 ---
 
@@ -184,7 +207,6 @@ Ideas, not promises — subject to change as the tool grows.
 - **Richer Docker stats** — go beyond the current CPU / MEM columns. Volumes, disk usage, memory details (limits vs usage), and whatever else turns out useful without cluttering the main table. Details still TBD.
 - Better macOS / Windows support
 - Jump from a port row straight to its process or container
-- Config for refresh interval and ignored system ports
 - CLI helpers for kill / docker stop (same actions as the TUI)
 
 ---

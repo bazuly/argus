@@ -1,6 +1,7 @@
 mod actions;
 mod cli;
 mod collectors;
+mod config;
 mod models;
 mod output;
 mod tui;
@@ -11,10 +12,14 @@ use cli::{Cli, Command, OutputFormat};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    let cfg = match &cli.config {
+        Some(path) => config::load_from(path),
+        None => config::load(),
+    };
 
     match cli.command {
         Command::Tui => {
-            tui::run()?;
+            tui::run(cfg)?;
         }
 
         Command::Ports(args) => {
@@ -31,7 +36,7 @@ fn main() -> Result<()> {
         }
 
         Command::Ps(args) => {
-            let processes = collectors::processes::collect(args.dev_only)?;
+            let processes = collectors::processes::collect(args.dev_only, &cfg.extra_dev_markers)?;
 
             match args.format {
                 OutputFormat::Table => output::table::print_processes(&processes),
@@ -44,6 +49,9 @@ fn main() -> Result<()> {
                 OutputFormat::Table => output::table::print_stats(&stats),
                 OutputFormat::Json => output::json::print_stats(&stats)?,
             }
+        }
+        Command::Config => {
+            config::print_effective(&cfg);
         }
     }
 

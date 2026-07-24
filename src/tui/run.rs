@@ -1,14 +1,15 @@
+use crate::config::Config;
 use crate::tui::app::App;
 use crate::tui::{events, ui};
 use anyhow::Result;
 use crossterm::event::{self, Event};
 use std::time::{Duration, Instant};
 
-pub fn run() -> Result<()> {
-    let result: Result<()> = ratatui::run(|terminal| {
-        let mut app = App::new();
+pub fn run(config: Config) -> Result<()> {
+    let refresh_every = Duration::from_secs(config.refresh_secs.max(1));
 
-        let refresh_every = Duration::from_secs(5);
+    let result: Result<()> = ratatui::run(|terminal| {
+        let mut app = App::new(config);
         let mut last_refresh = Instant::now() - refresh_every;
 
         loop {
@@ -30,7 +31,6 @@ pub fn run() -> Result<()> {
 
             terminal.draw(|frame| ui::draw(frame, &mut app))?;
 
-            // wait key for block
             if event::poll(Duration::from_millis(100))? {
                 if let Event::Key(key_event) = event::read()? {
                     events::handle_key(&mut app, key_event);

@@ -4,7 +4,7 @@ use std::ffi::OsString;
 use std::thread;
 use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, ProcessRefreshKind, ProcessesToUpdate, System};
 
-pub fn collect(dev_only: bool) -> Result<Vec<DevProcess>> {
+pub fn collect(dev_only: bool, extra_dev_markers: &[String]) -> Result<Vec<DevProcess>> {
     let mut system = System::new();
 
     system.refresh_all();
@@ -27,7 +27,7 @@ pub fn collect(dev_only: bool) -> Result<Vec<DevProcess>> {
             cmdline = name.clone();
         }
 
-        let is_dev: bool = is_dev_process(&name, &cmdline);
+        let is_dev: bool = is_dev_process(&name, &cmdline, extra_dev_markers);
 
         if dev_only && !is_dev {
             continue;
@@ -60,7 +60,7 @@ fn format_cmdline(cmd_parts: &[OsString]) -> String {
     cmd_pieces.join(" ")
 }
 
-fn is_dev_process(name: &str, cmdline: &str) -> bool {
+fn is_dev_process(name: &str, cmdline: &str, extra_markers: &[String]) -> bool {
     const DEV_MARKERS: &[&str] = &[
         // JS
         "node",
@@ -134,7 +134,12 @@ fn is_dev_process(name: &str, cmdline: &str) -> bool {
     ];
 
     let haystack: String = format!("{} {}", name, cmdline).to_lowercase();
-    DEV_MARKERS.iter().any(|marker| haystack.contains(marker))
+    if DEV_MARKERS.iter().any(|marker| haystack.contains(marker)) {
+        return true;
+    }
+    extra_markers
+        .iter()
+        .any(|marker| haystack.contains(&marker.to_ascii_lowercase()))
 }
 
 #[cfg(test)]
@@ -144,14 +149,20 @@ mod tests {
 
     #[test]
     fn detects_node_and_cargo_as_dev() {
-        assert!(is_dev_process("node", "node server.js"));
-        assert!(is_dev_process("cargo", "cargo run"));
-        assert!(is_dev_process("python3", "uvicorn app:main"));
+        assert!(is_dev_process("node", "node server.js", &[]));
+        assert!(is_dev_process("cargo", "cargo run", &[]));
+        assert!(is_dev_process("python3", "uvicorn app:main", &[]));
     }
     #[test]
     fn rejects_plain_shell() {
-        assert!(!is_dev_process("bash", "-bash"));
-        assert!(!is_dev_process("sleep", "sleep 10"));
+        assert!(!is_dev_process("bash", "-bash", &[]));
+        assert!(!is_dev_process("sleep", "sleep 10", &[]));
+    }
+    #[test]
+    fn respects_extra_markers_from_config() {
+        let extra = vec!["my-legacy-app".to_string()];
+        assert!(is_dev_process("foo", "foo my-legacy-app", &extra));
+        assert!(!is_dev_process("foo", "foo unrelated", &[]));
     }
     #[test]
     fn format_cmdline_joins_parts() {
