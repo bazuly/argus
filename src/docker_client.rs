@@ -16,7 +16,6 @@ pub fn connect(docker_host_override: Option<&str>) -> Result<Docker> {
             .with_context(|| format!("failed to connect using config docker_host ({host})"));
     }
 
-    // Откуда мы берем DOCKER_HOST?
     if let Ok(host) = env::var("DOCKER_HOST") {
         let host = host.trim();
 
@@ -26,7 +25,6 @@ pub fn connect(docker_host_override: Option<&str>) -> Result<Docker> {
         }
     }
 
-    // и вот эту часть кода мне тоже объясни, как я понял, мы получаем путь, а если его нет то коннектимся по дефлоту как к юниксу
     let candidates = candidate_sockets();
     let mut tried = Vec::with_capacity(candidates.len());
     for path in &candidates {
