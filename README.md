@@ -121,6 +121,14 @@ Three tabs:
 2. **Processes** — your local servers / tooling; press `x` to kill the selected process
 3. **Docker** — containers with CPU / MEM; stop, restart, or remove
 
+<p align="center">
+  <img src="assets/light-stripe-tui-docker.png" alt="Light Stripe TUI — Docker tab showing containers with CPU and memory usage" width="820" />
+</p>
+
+<p align="center">
+  <em>Docker tab — containers with CPU / MEM and quick actions.</em>
+</p>
+
 ### Keys you’ll actually use
 
 | Key | What it does |
