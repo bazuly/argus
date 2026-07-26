@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-/// User settings for Argus.
+/// User settings for Light Stripe.
 ///
 /// Load order:
 /// 1. Built-in defaults (`Default`)
-/// 2. Optional TOML file (`~/.config/argus/config.toml` on Linux)
+/// 2. Optional TOML file (`~/.config/light-stripe/config.toml` on Linux)
 ///
 /// Missing file is fine — defaults are used. Invalid file prints a warning
 /// and also falls back to defaults.
@@ -58,12 +58,12 @@ impl Config {
     }
 }
 
-/// Standard config path for this OS, e.g. `~/.config/argus/config.toml`.
+/// Standard config path for this OS, e.g. `~/.config/light-stripe/config.toml`.
 pub fn config_path() -> PathBuf {
-    if let Some(dirs) = ProjectDirs::from("dev", "argus", "argus") {
+    if let Some(dirs) = ProjectDirs::from("dev", "light-stripe", "light-stripe") {
         return dirs.config_dir().join("config.toml");
     }
-    PathBuf::from("argus.toml")
+    PathBuf::from("light-stripe.toml")
 }
 
 /// Load config from the default path.
@@ -81,7 +81,7 @@ pub fn load_from(path: &std::path::Path) -> Config {
         Ok(config) => config,
         Err(error) => {
             eprintln!(
-                "argus: invalid config at {}: {error}; using defaults",
+                "light-stripe: invalid config at {}: {error}; using defaults",
                 path.display()
             );
             Config::default()
@@ -89,7 +89,7 @@ pub fn load_from(path: &std::path::Path) -> Config {
     }
 }
 
-/// Pretty-print effective config (for `argus config`).
+/// Pretty-print effective config (for `light-stripe config`).
 pub fn print_effective(config: &Config) {
     let path = config_path();
     println!("config path: {}", path.display());
@@ -120,14 +120,14 @@ mod tests {
 
     #[test]
     fn missing_file_uses_defaults() {
-        let config = load_from(std::path::Path::new("/tmp/argus-does-not-exist-12345.toml"));
+        let config = load_from(std::path::Path::new("/tmp/light-stripe-does-not-exist-12345.toml"));
         assert_eq!(config, Config::default());
     }
 
     #[test]
     fn loads_partial_toml_with_serde_defaults() {
         let dir = std::env::temp_dir();
-        let path = dir.join("argus-config-test.toml");
+        let path = dir.join("light-stripe-config-test.toml");
         let mut file = fs::File::create(&path).expect("create temp config");
         writeln!(file, "refresh_secs = 5").expect("write config");
         drop(file);
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn loads_extra_markers() {
         let dir = std::env::temp_dir();
-        let path = dir.join("argus-config-markers-test.toml");
+        let path = dir.join("light-stripe-config-markers-test.toml");
         let mut file = fs::File::create(&path).expect("create temp config");
         write!(
             file,

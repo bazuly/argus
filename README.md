@@ -1,8 +1,16 @@
-# Argus
+# Light Stripe
 
-A small Rust tool for the everyday mess of local development.
+<p align="center">
+  <img src="assets/light-stripe-concept.png" alt="Light Stripe — a bright stripe through the dark of local-dev chaos" width="820" />
+</p>
 
-You know the feeling: Redis is up, Postgres is up, three `node` processes are running, something grabbed port `8080`, and `htop` is somehow both too much and not enough. Argus is meant for that moment — a focused look at **ports**, **dev processes**, and **Docker**, plus a simple TUI when you want to poke around interactively.
+<p align="center">
+  <em>A bright stripe through the mess of local development.</em>
+</p>
+
+A small Rust tool for the everyday chaos of ports, processes, and Docker.
+
+You know the feeling: Redis is up, Postgres is up, three `node` processes are running, something grabbed port `8080`, and `htop` is somehow both too much and not enough. Light Stripe is meant for that moment — a focused look at **ports**, **dev processes**, and **Docker**, plus a simple TUI when you want to poke around interactively.
 
 ---
 
@@ -22,12 +30,12 @@ Right now it works best on **Linux and WSL**. macOS / Windows are on the radar.
 You need a recent Rust toolchain. Docker is optional, but without it you lose container names on ports and the Docker tab.
 
 ```bash
-git clone <your-repo-url> argus
-cd argus
+git clone <your-repo-url> light-stripe
+cd light-stripe
 cargo build --release
 ```
 
-The binary ends up at `target/release/argus`. For day-to-day hacking, this is fine too:
+The binary ends up at `target/release/light-stripe`. For day-to-day hacking, this is fine too:
 
 ```bash
 cargo run -- tui
@@ -60,18 +68,18 @@ cargo run -- ps -d --format json
 ## CLI
 
 ```text
-argus tui      Interactive TUI          (alias: ui)
-argus ports    Listening ports          (aliases: p, port)
-argus ps       Processes                (alias: proc)
-argus stats    System RAM / CPU         (aliases: st, sys)
+light-stripe tui      Interactive TUI          (alias: ui)
+light-stripe ports    Listening ports          (aliases: p, port)
+light-stripe ps       Processes                (alias: proc)
+light-stripe stats    System RAM / CPU         (aliases: st, sys)
 ```
 
 ### ports
 
 ```bash
-argus ports
-argus ports -p 6379
-argus ports --format json
+light-stripe ports
+light-stripe ports -p 6379
+light-stripe ports --format json
 ```
 
 Each row is a listening socket. The **OWNER** column is the useful bit: either a process name, or something like `redis-dev (docker)` when Docker published that host port.
@@ -79,18 +87,18 @@ Each row is a listening socket. The **OWNER** column is the useful bit: either a
 ### ps
 
 ```bash
-argus ps
-argus ps -d              # --dev-only
-argus ps --format json
+light-stripe ps
+light-stripe ps -d              # --dev-only
+light-stripe ps --format json
 ```
 
-Without `-d` you get a broader process list. With `-d`, Argus tries to keep only things that look like local development (Node, Python, Cargo, local DBs, and similar).
+Without `-d` you get a broader process list. With `-d`, Light Stripe tries to keep only things that look like local development (Node, Python, Cargo, local DBs, and similar).
 
 ### stats
 
 ```bash
-argus stats
-argus stats --format json
+light-stripe stats
+light-stripe stats --format json
 ```
 
 Host memory and CPU. On WSL, the total RAM is whatever the WSL2 VM is allowed to use — not always the full Windows machine.
@@ -98,7 +106,7 @@ Host memory and CPU. On WSL, the total RAM is whatever the WSL2 VM is allowed to
 ### tui
 
 ```bash
-argus tui
+light-stripe tui
 ```
 
 Full-screen view. Data refreshes about every two seconds (press `r` to refresh now).
@@ -135,7 +143,7 @@ Search is intentionally simple: type a query, hit Enter, and the selection jumps
 
 ## Ports + Docker
 
-If Docker is running, Argus connects the dots for you:
+If Docker is running, Light Stripe connects the dots for you:
 
 ```text
 6379  →  redis-dev (docker)
@@ -173,8 +181,8 @@ Optional file — if missing, built-in defaults are used:
 cargo run -- config
 
 # Linux / WSL example path
-mkdir -p ~/.config/argus
-cp config.example.toml ~/.config/argus/config.toml
+mkdir -p ~/.config/light-stripe
+cp config.example.toml ~/.config/light-stripe/config.toml
 ```
 
 You can also pass an explicit file:
@@ -188,7 +196,7 @@ Settings today: `refresh_secs`, `ignored_ports`, `extra_dev_markers`, `docker_ho
 
 #### Docker connection (`docker_host`)
 
-Argus talks to the **local** Docker daemon on the machine where it runs (your laptop, WSL VM, or VPS). In most cases you do **not** need to set anything — Argus auto-detects common socket paths.
+Light Stripe talks to the **local** Docker daemon on the machine where it runs (your laptop, WSL VM, or VPS). In most cases you do **not** need to set anything — Light Stripe auto-detects common socket paths.
 
 If auto-detect fails, set `docker_host` in config. It accepts:
 
@@ -208,12 +216,12 @@ cargo run -- config
 
 ```bash
 # Linux / WSL
-mkdir -p ~/.config/argus
-cp config.example.toml ~/.config/argus/config.toml
+mkdir -p ~/.config/light-stripe
+cp config.example.toml ~/.config/light-stripe/config.toml
 
 # macOS
-mkdir -p ~/Library/Application\ Support/argus
-cp config.example.toml ~/Library/Application\ Support/argus/config.toml
+mkdir -p ~/Library/Application\ Support/light-stripe
+cp config.example.toml ~/Library/Application\ Support/light-stripe/config.toml
 ```
 
 **3. Add `docker_host` only when needed**
@@ -248,7 +256,7 @@ cargo run -- tui
 
 **When you don't need this**
 
-If Argus runs on the same machine as Docker (the usual VPS / dev setup), leave `docker_host` unset. Argus is meant to monitor **this** host's ports, processes, and containers — not a remote Docker cluster from your machine.
+If Light Stripe runs on the same machine as Docker (the usual VPS / dev setup), leave `docker_host` unset. Light Stripe is meant to monitor **this** host's ports, processes, and containers — not a remote Docker cluster from your machine.
 
 ### Libraries
 
@@ -269,7 +277,7 @@ Built with clap, ratatui, crossterm, sysinfo, netstat2, bollard, comfy-table, se
 Ideas, not promises — subject to change as the tool grows.
 
 - **Richer Docker stats** — go beyond the current CPU / MEM columns. Volumes, disk usage, memory details (limits vs usage), and whatever else turns out useful without cluttering the main table. Details still TBD.
-- Better macOS / Windows support????
+- Better macOS / Windows support
 - Jump from a port row straight to its process or container
 - CLI helpers for kill / docker stop (same actions as the TUI) (done)
 
@@ -278,7 +286,3 @@ Ideas, not promises — subject to change as the tool grows.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
----
-
-Named after Argus Panoptes — the all-seeing one. Fitting for a tool that stares at your ports.

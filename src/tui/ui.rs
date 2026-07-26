@@ -35,7 +35,7 @@ fn viewport_rows(area: Rect) -> usize {
 
 fn draw_header(frame: &mut Frame, area: Rect, app: &mut App) {
     let text = if let Some(error) = &app.last_error {
-        format!("argus | ERROR: {error}")
+        format!("Light Stripe | ERROR: {error}")
     } else if let Some(snapshot) = &app.snapshot {
         let used_gb = bytes_to_gb(snapshot.stats.used_memory);
         let total_gb = bytes_to_gb(snapshot.stats.total_memory);
@@ -44,9 +44,9 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &mut App) {
             Some(temp) => format!(" {temp:.0}°C"),
             None => String::new(),
         };
-        format!("argus | RAM {used_gb:.1}/{total_gb:.1} GB | CPU {cpu:.1}%{cpu_temp}")
+        format!("Light Stripe | RAM {used_gb:.1}/{total_gb:.1} GB | CPU {cpu:.1}%{cpu_temp}")
     } else {
-        "argus | Loading...".to_string()
+        "Light Stripe | Loading...".to_string()
     };
     let widget = Paragraph::new(text).block(Block::bordered().title(" DevTop "));
     frame.render_widget(widget, area);

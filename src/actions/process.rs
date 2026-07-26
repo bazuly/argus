@@ -3,7 +3,7 @@ use sysinfo::{Pid, ProcessesToUpdate, Signal, System};
 
 pub fn kill_process(pid: u32) -> Result<()> {
     if pid == std::process::id() {
-        bail!("refusing to kill argus itself pid: {pid}");
+        bail!("refusing to kill light-stripe itself pid: {pid}");
     }
 
     let sys_pid = Pid::from_u32(pid);
@@ -37,7 +37,7 @@ mod tests {
     #[test]
     fn refuse_to_kill_myself() {
         let err = kill_process(std::process::id()).unwrap_err();
-        assert!(err.to_string().contains("refusing to kill argus itself"))
+        assert!(err.to_string().contains("refusing to kill light-stripe itself"))
     }
 
     #[test]
