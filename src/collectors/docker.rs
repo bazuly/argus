@@ -1,3 +1,4 @@
+use crate::docker_client;
 use crate::models::DockerContainer;
 use anyhow::{Context, Result};
 use bollard::Docker;
@@ -8,15 +9,14 @@ use futures_util::StreamExt;
 use futures_util::future::join_all;
 use tokio::runtime::Runtime;
 
-pub fn collect() -> Result<Vec<DockerContainer>> {
+pub fn collect(docker_host: Option<&str>) -> Result<Vec<DockerContainer>> {
     let runtime = Runtime::new().context("failed to create tokio runtime")?;
 
-    runtime.block_on(collect_async())
+    runtime.block_on(collect_async(docker_host))
 }
 
-async fn collect_async() -> Result<Vec<DockerContainer>> {
-    let docker = Docker::connect_with_socket_defaults()
-        .context("failed to connect to docker socket (/var/run/docker.sock)")?;
+async fn collect_async(docker_host: Option<&str>) -> Result<Vec<DockerContainer>> {
+    let docker = docker_client::connect(docker_host)?;
 
     // collect all docker containers, analogy "docker ps -a"
     let options = ListContainersOptionsBuilder::default().all(true).build();

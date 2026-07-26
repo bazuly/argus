@@ -2,6 +2,7 @@ mod actions;
 mod cli;
 mod collectors;
 mod config;
+mod docker_client;
 mod models;
 mod output;
 mod tui;
@@ -25,7 +26,7 @@ fn main() -> Result<()> {
         Command::Ports(args) => {
             let mut bindings = collectors::ports::collect(args.port)?;
 
-            if let Ok(containers) = collectors::docker::collect() {
+            if let Ok(containers) = collectors::docker::collect(cfg.docker_host()) {
                 collectors::enrich::attach_docker(&mut bindings, &containers);
             }
 

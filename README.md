@@ -184,7 +184,71 @@ cargo run -- --config ./config.example.toml config
 cargo run -- --config ./config.example.toml tui
 ```
 
-Settings today: `refresh_secs`, `ignored_ports`, `extra_dev_markers`.
+Settings today: `refresh_secs`, `ignored_ports`, `extra_dev_markers`, `docker_host`.
+
+#### Docker connection (`docker_host`)
+
+Argus talks to the **local** Docker daemon on the machine where it runs (your laptop, WSL VM, or VPS). In most cases you do **not** need to set anything — Argus auto-detects common socket paths.
+
+If auto-detect fails, set `docker_host` in config. It accepts:
+
+- a Unix socket URI: `unix:///var/run/docker.sock`
+- a plain socket path: `/var/run/docker.sock`
+- a TCP endpoint: `tcp://127.0.0.1:2375` (only if your daemon listens on the network)
+
+**Priority:** config `docker_host` → env `DOCKER_HOST` → auto-detect known sockets.
+
+**1. Find your config path**
+
+```bash
+cargo run -- config
+```
+
+**2. Copy the example and edit**
+
+```bash
+# Linux / WSL
+mkdir -p ~/.config/argus
+cp config.example.toml ~/.config/argus/config.toml
+
+# macOS
+mkdir -p ~/Library/Application\ Support/argus
+cp config.example.toml ~/Library/Application\ Support/argus/config.toml
+```
+
+**3. Add `docker_host` only when needed**
+
+Linux / WSL / VPS (typical — often no override needed):
+
+```toml
+# Usually auto-detect works; uncomment only if it doesn't:
+# docker_host = "unix:///var/run/docker.sock"
+```
+
+macOS with Docker Desktop (when `/var/run/docker.sock` is missing):
+
+```toml
+docker_host = "unix:///Users/you/.docker/run/docker.sock"
+```
+
+Same path without the `unix://` prefix also works:
+
+```toml
+docker_host = "/Users/you/.docker/run/docker.sock"
+```
+
+**Alternative: environment variable**
+
+Instead of config, you can export `DOCKER_HOST` in your shell (used when `docker_host` is not set in config):
+
+```bash
+export DOCKER_HOST=unix:///Users/you/.docker/run/docker.sock
+cargo run -- tui
+```
+
+**When you don't need this**
+
+If Argus runs on the same machine as Docker (the usual VPS / dev setup), leave `docker_host` unset. Argus is meant to monitor **this** host's ports, processes, and containers — not a remote Docker cluster from your machine.
 
 ### Libraries
 
@@ -205,9 +269,9 @@ Built with clap, ratatui, crossterm, sysinfo, netstat2, bollard, comfy-table, se
 Ideas, not promises — subject to change as the tool grows.
 
 - **Richer Docker stats** — go beyond the current CPU / MEM columns. Volumes, disk usage, memory details (limits vs usage), and whatever else turns out useful without cluttering the main table. Details still TBD.
-- Better macOS / Windows support
+- Better macOS / Windows support????
 - Jump from a port row straight to its process or container
-- CLI helpers for kill / docker stop (same actions as the TUI)
+- CLI helpers for kill / docker stop (same actions as the TUI) (done)
 
 ---
 

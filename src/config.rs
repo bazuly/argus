@@ -24,10 +24,13 @@ pub struct Config {
     /// Extra substrings treated as "dev" processes (added on top of builtins).
     #[serde(default)]
     pub extra_dev_markers: Vec<String>,
+
+    #[serde(default)]
+    pub docker_host: Option<String>,
 }
 
 fn default_refresh_secs() -> u64 {
-    5
+    15
 }
 
 fn default_ignored_ports() -> Vec<u16> {
@@ -40,7 +43,18 @@ impl Default for Config {
             refresh_secs: default_refresh_secs(),
             ignored_ports: default_ignored_ports(),
             extra_dev_markers: Vec::new(),
+            docker_host: None,
         }
+    }
+}
+
+impl Config {
+    /// Trimmed docker host override, if set
+    pub fn docker_host(&self) -> Option<&str> {
+        self.docker_host
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
     }
 }
 
@@ -99,7 +113,7 @@ mod tests {
     #[test]
     fn default_values() {
         let config = Config::default();
-        assert_eq!(config.refresh_secs, 2);
+        assert_eq!(config.refresh_secs, 15);
         assert_eq!(config.ignored_ports, vec![53, 323]);
         assert!(config.extra_dev_markers.is_empty());
     }

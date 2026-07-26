@@ -7,10 +7,18 @@
 #   cargo run -- config
 
 # TUI auto-refresh interval (seconds)
-refresh_secs = 5
+refresh_secs = 15
 
 # Ports hidden on the TUI Ports tab
 ignored_ports = [53, 323]
 
 # Extra "dev process" markers (added to the built-in list)
 # extra_dev_markers = ["webpack-dev-server", "my-legacy-app"]
+
+# Optional Docker endpoint override.
+# Accepts:
+#   unix:///Users/you/.docker/run/docker.sock
+#   /var/run/docker.sock
+#   tcp://127.0.0.1:2375
+# Leave unset for auto-detect (DOCKER_HOST → common sockets).
+# docker_host = "unix:///Users/you/.docker/run/docker.sock"

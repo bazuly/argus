@@ -77,7 +77,7 @@ impl App {
         let processes = processes::collect(true, &self.config.extra_dev_markers)?;
         let stats = system::collect()?;
 
-        let (containers, docker_error) = match collect() {
+        let (containers, docker_error) = match collect(self.config.docker_host()) {
             Ok(containers) => {
                 enrich::attach_docker(&mut ports, &containers);
                 (containers, None)
