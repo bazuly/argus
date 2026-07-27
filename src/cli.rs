@@ -2,7 +2,11 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(version, about = "Light Stripe — ports, processes, and Docker for local dev", name = "light-stripe")]
+#[command(
+    version,
+    about = "Light Stripe — ports, processes, and Docker for local dev",
+    name = "light-stripe"
+)]
 pub struct Cli {
     /// Path to config.toml (default: platform config dir)
     #[arg(long, global = true)]

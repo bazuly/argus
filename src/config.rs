@@ -34,7 +34,7 @@ fn default_refresh_secs() -> u64 {
 }
 
 fn default_ignored_ports() -> Vec<u16> {
-    vec![53, 323]
+    vec![53, 323, 5353, 0]
 }
 
 impl Default for Config {
@@ -120,7 +120,9 @@ mod tests {
 
     #[test]
     fn missing_file_uses_defaults() {
-        let config = load_from(std::path::Path::new("/tmp/light-stripe-does-not-exist-12345.toml"));
+        let config = load_from(std::path::Path::new(
+            "/tmp/light-stripe-does-not-exist-12345.toml",
+        ));
         assert_eq!(config, Config::default());
     }
 

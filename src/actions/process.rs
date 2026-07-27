@@ -37,7 +37,10 @@ mod tests {
     #[test]
     fn refuse_to_kill_myself() {
         let err = kill_process(std::process::id()).unwrap_err();
-        assert!(err.to_string().contains("refusing to kill light-stripe itself"))
+        assert!(
+            err.to_string()
+                .contains("refusing to kill light-stripe itself")
+        )
     }
 
     #[test]
