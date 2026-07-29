@@ -6,7 +6,7 @@ pub enum Protocol {
     Tcp,
     Udp,
 }
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct PortBinding {
     pub port: u16,
     pub protocol: Protocol,

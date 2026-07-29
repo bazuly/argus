@@ -114,7 +114,7 @@ mod tests {
     fn default_values() {
         let config = Config::default();
         assert_eq!(config.refresh_secs, 15);
-        assert_eq!(config.ignored_ports, vec![53, 323]);
+        assert_eq!(config.ignored_ports, vec![53, 323, 5353, 0]);
         assert!(config.extra_dev_markers.is_empty());
     }
 
@@ -139,7 +139,7 @@ mod tests {
 
         assert_eq!(config.refresh_secs, 5);
         // fields omitted in file keep defaults
-        assert_eq!(config.ignored_ports, vec![53, 323]);
+        assert_eq!(config.ignored_ports, vec![53, 323, 5353, 0]);
         assert!(config.extra_dev_markers.is_empty());
     }
 

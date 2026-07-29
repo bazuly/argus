@@ -307,7 +307,7 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 
 fn footer_hints(tab: Tab) -> &'static str {
     match tab {
-        Tab::Ports => "q: quit | r: refresh | /: search | 1-3: tabs",
+        Tab::Ports => "q: quit | r: refresh | /: search | Enter: jump | 1-3: tabs",
         Tab::Processes => "q: quit | r: refresh | /: search | x: kill | 1-3: tabs",
         Tab::Docker => {
             "q: quit | r: refresh | /: search | s: stop | S: restart | d: remove | 1-3: tabs"

@@ -286,7 +286,7 @@ Ideas, not promises — subject to change as the tool grows.
 
 - **Richer Docker stats** — go beyond the current CPU / MEM columns. Volumes, disk usage, memory details (limits vs usage), and whatever else turns out useful without cluttering the main table. Details still TBD.
 - Better macOS / Windows support
-- Jump from a port row straight to its process or container
+- Jump from a port row straight to its process or container (done)
 - CLI helpers for kill / docker stop (same actions as the TUI) (done)
 
 ---

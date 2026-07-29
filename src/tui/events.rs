@@ -86,6 +86,10 @@ fn handle_normal_key(app: &mut App, key: KeyEvent) {
             app.request_remove_selected_container();
         }
 
+        KeyCode::Enter | KeyCode::Char('g') if app.tab == Tab::Ports => {
+            app.jump_from_selected_port();
+        }
+
         _ => {}
     }
 }

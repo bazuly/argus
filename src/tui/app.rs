@@ -313,10 +313,80 @@ impl App {
     pub fn cancel_pending_action(&mut self) {
         self.input_mode = InputMode::Normal;
     }
+
+    pub fn selected_port(&self) -> Option<&PortBinding> {
+        if self.tab != Tab::Ports {
+            return None;
+        }
+        let snapshot = self.snapshot.as_ref()?;
+        snapshot.ports.get(self.selected_row)
+    }
+
+    pub fn jump_from_selected_port(&mut self) {
+        let Some(binding) = self.selected_port().cloned() else {
+            self.set_status("no port selected");
+            return;
+        };
+        // Prefer Docker when OWNER is a container (same as enrich preference).
+        if let Some(name) = binding.container_name.as_deref() {
+            if self.jump_to_container_by_name(name) {
+                self.set_status(format!("jumped to container {name}"));
+                return;
+            }
+            // If Docker tab missing this container — fall through to process.
+        };
+
+        if let Some(pid) = binding.pid {
+            if self.jump_to_process_by_pid(pid) {
+                let label = binding.process_name.as_deref().unwrap_or("process");
+                self.set_status(format!("jumped to {label} (pid: {pid})"));
+                return;
+            } else {
+                let label = binding.process_name.as_deref().unwrap_or("process");
+                self.set_status(format!(
+                    "{label} (pid {pid}) is not in DEV Processes list, unable to reach"
+                ));
+            }
+            return;
+        }
+    }
+
+    fn jump_to_container_by_name(&mut self, name: &str) -> bool {
+        let Some(index) = self
+            .snapshot
+            .as_ref()
+            .and_then(|s| s.containers.iter().position(|c| c.name == name))
+        else {
+            return false;
+        };
+        self.set_tab(Tab::Docker);
+        self.select_row(index);
+        true
+    }
+
+    fn jump_to_process_by_pid(&mut self, pid: u32) -> bool {
+        let Some(index) = self
+            .snapshot
+            .as_ref()
+            .and_then(|s| s.processes.iter().position(|p| p.pid == pid))
+        else {
+            return false;
+        };
+        self.set_tab(Tab::Processes);
+        self.select_row(index);
+        true
+    }
+
+    fn select_row(&mut self, index: usize) {
+        self.selected_row = index;
+        self.list_offset = 0;
+        self.table_state.select(Some(index));
+    }
 }
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::models::Protocol;
 
@@ -359,6 +429,93 @@ mod tests {
         app.snapshot = Some(snapshot_ports(n));
         app.needs_refresh = false;
         app
+    }
+
+    fn container(name: &str, host_ports: Vec<u16>) -> DockerContainer {
+        DockerContainer {
+            id: format!("id-{name}"),
+            name: name.to_string(),
+            image: format!("{name}:latest"),
+            status: "running".to_string(),
+            host_ports,
+            cpu_percent: None,
+            memory_bytes: None,
+        }
+    }
+
+    fn process(pid: u32, name: &str) -> DevProcess {
+        DevProcess {
+            pid,
+            name: name.to_string(),
+            cmdline: name.to_string(),
+            memory_bytes: 0,
+            cpu_usage: 0.0,
+            is_dev: true,
+        }
+    }
+
+    #[test]
+    fn jump_from_port_to_container() {
+        let mut app = App::new(Config::default());
+        app.tab = Tab::Ports;
+        let mut binding = port(6379, "docker-proxy");
+        binding.pid = Some(42);
+        binding.container_name = Some("redis-dev".to_string());
+        app.snapshot = Some(Snapshot {
+            ports: vec![binding],
+            processes: vec![process(42, "docker-proxy")],
+            containers: vec![container("redis-dev", vec![6379])],
+            docker_error: None,
+            stats: empty_stats(),
+        });
+
+        app.jump_from_selected_port();
+
+        assert_eq!(app.tab, Tab::Docker);
+        assert_eq!(app.selected_row, 0);
+        assert!(app.status_message.as_deref().unwrap().contains("redis-dev"))
+    }
+
+    #[test]
+    fn jump_from_port_to_process_when_no_container() {
+        let mut app = App::new(Config::default());
+        app.tab = Tab::Ports;
+        let mut binding = port(3000, "node");
+        binding.pid = Some(100);
+        app.snapshot = Some(Snapshot {
+            ports: vec![binding],
+            processes: vec![process(99, "other"), process(100, "node")],
+            containers: vec![],
+            docker_error: None,
+            stats: empty_stats(),
+        });
+
+        app.jump_from_selected_port();
+        assert_eq!(app.tab, Tab::Processes);
+        assert_eq!(app.selected_row, 1)
+    }
+
+    #[test]
+    fn jump_reports_when_process_not_in_dev_list() {
+        let mut app = App::new(Config::default());
+        app.tab = Tab::Ports;
+        let mut binding = port(5353, "mDNSResponder");
+        binding.pid = Some(1503);
+        app.snapshot = Some(Snapshot {
+            ports: vec![binding],
+            processes: vec![], // DEV list empty / filtered
+            containers: vec![],
+            docker_error: None,
+            stats: empty_stats(),
+        });
+        app.jump_from_selected_port();
+        assert_eq!(app.tab, Tab::Ports);
+        assert!(
+            app.status_message
+                .as_deref()
+                .unwrap()
+                .contains("not in DEV Processes")
+        );
     }
 
     #[test]
