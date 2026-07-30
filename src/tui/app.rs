@@ -69,6 +69,7 @@ impl App {
         self.search_query.clear();
         self.search_match_index = 0;
         self.input_mode = InputMode::Normal;
+        self.clear_status();
     }
 
     pub fn reload_snapshot(&mut self) -> Result<()> {
@@ -210,9 +211,9 @@ impl App {
         self.status_message = Some(message.into());
     }
 
-    // pub fn clear_status(&mut self) {
-    //     self.status_message = None;
-    // }
+    pub fn clear_status(&mut self) {
+        self.status_message = None;
+    }
 
     pub fn selected_process(&self) -> Option<&DevProcess> {
         if self.tab != Tab::Processes {
